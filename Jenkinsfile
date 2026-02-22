@@ -1,17 +1,13 @@
 node {
-    def app
-
     stage('Clone Repository') {
         checkout scm
     }
 
     stage('Build') {
-        app = docker.build("react-app")
+        sh 'docker build -t react-app .'
     }
 
     stage('Test') {
-        app.inside {
-            sh 'echo "Tests passed"'
-        }
+        sh 'docker run --rm react-app sh -c "CI=true npm test -- --watchAll=false"'
     }
 }
