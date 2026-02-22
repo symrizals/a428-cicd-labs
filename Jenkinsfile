@@ -4,10 +4,10 @@ node {
     }
 
     stage('Build') {
-        sh 'docker build -t react-app .'
+        sh 'docker run --rm -v $(pwd):/app -w /app node:lts-buster-slim npm install'
     }
 
     stage('Test') {
-        sh 'docker run --rm react-app sh -c "CI=true npm test -- --watchAll=false"'
+        sh 'docker run --rm -v $(pwd):/app -w /app -e CI=true node:lts-buster-slim npm test -- --watchAll=false'
     }
 }
