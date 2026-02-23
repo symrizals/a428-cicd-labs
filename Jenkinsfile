@@ -1,15 +1,16 @@
 node {
-    def app
-
     stage('Build') {
-        checkout scm
-        app = docker.build("react-app")
+        docker.image('node:lts-buster-slim').inside('-p 3000:3000') {
+            checkout scm
+            sh 'npm install'
+        }
     }
 
     stage('Test') {
-        app.inside {
-            sh 'echo "Running tests..."'
-            sh 'CI=true npm test -- --watchAll=false'
+        docker.image('node:lts-buster-slim').inside('-p 3000:3000') {
+            checkout scm
+            sh 'npm install'
+            sh './jenkins/scripts/test.sh'
         }
     }
 
@@ -18,10 +19,13 @@ node {
     }
 
     stage('Deploy') {
-        app.inside('-p 3000:3000') {
-            sh 'serve -s build -l 3000 &'
+        docker.image('node:lts-buster-slim').inside('-p 3000:3000') {
+            checkout scm
+            sh 'npm install'
+            sh './jenkins/scripts/deliver.sh'
             echo 'Aplikasi berjalan selama 1 menit...'
             sleep(time: 60, unit: 'SECONDS')
+            sh './jenkins/scripts/kill.sh'
             echo 'Selesai!'
         }
     }
