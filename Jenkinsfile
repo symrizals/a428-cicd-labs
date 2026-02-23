@@ -1,13 +1,28 @@
 node {
-    stage('Clone Repository') {
-        checkout scm
-    }
+    def app
 
     stage('Build') {
-        sh 'docker run --rm -v $(pwd):/app -w /app node:lts-buster-slim npm install'
+        checkout scm
+        app = docker.build("react-app")
     }
 
     stage('Test') {
-        sh 'docker run --rm -v $(pwd):/app -w /app -e CI=true node:lts-buster-slim npm test -- --watchAll=false'
+        app.inside {
+            sh 'echo "Running tests..."'
+            sh 'CI=true npm test -- --watchAll=false'
+        }
+    }
+
+    stage('Manual Approval') {
+        input message: 'Lanjutkan ke tahap Deploy?', ok: 'Proceed'
+    }
+
+    stage('Deploy') {
+        app.inside('-p 3000:3000') {
+            sh 'serve -s build -l 3000 &'
+            echo 'Aplikasi berjalan selama 1 menit...'
+            sleep(time: 60, unit: 'SECONDS')
+            echo 'Selesai!'
+        }
     }
 }
